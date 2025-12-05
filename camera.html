@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GitHub Pages 相机测试</title>
+  <style>
+    body { padding: 20px; max-width: 500px; margin: 0 auto; }
+    .camera-btn { padding: 12px 24px; background: #0078ff; color: white; border: none; border-radius: 8px; cursor: pointer; }
+    .preview { margin-top: 20px; }
+    .preview img, .preview video { max-width: 100%; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <h3>相机调起测试</h3>
+  <!-- 核心：input file + capture=environment（后置相机） -->
+  <input 
+    type="file" 
+    id="cameraInput" 
+    accept="image/*" 
+    capture="environment" 
+    multiple="false"
+    style="display: none;"
+    onchange="handleCapture(this)"
+  >
+  <button class="camera-btn" onclick="document.getElementById('cameraInput').click()">点击调起相机</button>
+  
+  <!-- 预览区域 -->
+  <div class="preview" id="previewArea"></div>
+
+  <script>
+    // 处理拍照结果
+    function handleCapture(input) {
+      const file = input.files[0];
+      if (!file) return;
+
+      // 清空预览
+      const previewArea = document.getElementById('previewArea');
+      previewArea.innerHTML = '';
+
+      // 生成预览URL
+      const previewUrl = URL.createObjectURL(file);
+      // 判断文件类型，创建对应预览元素
+      if (file.type.startsWith('image/')) {
+        const img = document.createElement('img');
+        img.src = previewUrl;
+        previewArea.appendChild(img);
+      } else if (file.type.startsWith('video/')) {
+        const video = document.createElement('video');
+        video.src = previewUrl;
+        video.controls = true;
+        previewArea.appendChild(video);
+      }
+
+      // 释放资源（可选）
+      input.value = ''; // 重置input，允许重新选择同一文件
+      window.addEventListener('beforeunload', () => {
+        URL.revokeObjectURL(previewUrl);
+      });
+    }
+  </script>
+</body>
+</html>
