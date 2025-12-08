@@ -3,60 +3,179 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GitHub Pages 相机测试</title>
+  <title>GitHub Pages 相机&文件上传测试</title>
   <style>
-    body { padding: 20px; max-width: 500px; margin: 0 auto; }
-    .camera-btn { padding: 12px 24px; background: #0078ff; color: white; border: none; border-radius: 8px; cursor: pointer; }
-    .preview { margin-top: 20px; }
-    .preview img, .preview video { max-width: 100%; border-radius: 8px; }
+    body { 
+      padding: 20px; 
+      max-width: 500px; 
+      margin: 0 auto; 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .action-btn { 
+      padding: 12px 24px; 
+      background: #0078ff; 
+      color: white; 
+      border: none; 
+      border-radius: 8px; 
+      cursor: pointer; 
+      flex: 1;
+      min-width: 120px;
+      font-size: 16px;
+      transition: background 0.2s;
+    }
+    .action-btn:hover {
+      background: #0066d1;
+    }
+    .action-btn.upload-btn {
+      background: #28a745;
+    }
+    .action-btn.upload-btn:hover {
+      background: #218838;
+    }
+    .preview { 
+      margin-top: 20px; 
+      padding: 16px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      min-height: 100px;
+    }
+    .preview-title {
+      color: #333;
+      margin: 0 0 12px 0;
+      font-size: 16px;
+    }
+    .preview-content {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .preview img, .preview video { 
+      max-width: 100%; 
+      border-radius: 8px;
+      max-height: 400px;
+      object-fit: contain;
+    }
+    .file-info {
+      padding: 8px 12px;
+      background: #f8f9fa;
+      border-radius: 4px;
+      font-size: 14px;
+      color: #495057;
+    }
+    .hidden {
+      display: none;
+    }
   </style>
 </head>
 <body>
-  <h3>相机调起测试</h3>
-  <!-- 核心：input file + capture=environment（后置相机） -->
+  <h3>相机调起 & 文件上传测试</h3>
+  
+  <!-- 按钮组 -->
+  <div class="btn-group">
+    <button class="action-btn camera-btn" onclick="document.getElementById('cameraInput').click()">调起相机拍照</button>
+    <button class="action-btn upload-btn" onclick="document.getElementById('fileInput').click()">上传本地文件</button>
+  </div>
+  
+  <!-- 相机输入控件 -->
   <input 
     type="file" 
     id="cameraInput" 
     accept="image/*" 
     capture="environment" 
     multiple="false"
-    style="display: none;"
-    onchange="handleCapture(this)"
+    class="hidden"
+    onchange="handleMedia(this, '相机拍摄')"
   >
-  <button class="camera-btn" onclick="document.getElementById('cameraInput').click()">点击调起相机</button>
+  
+  <!-- 文件上传控件 -->
+  <input 
+    type="file" 
+    id="fileInput" 
+    accept="image/*,video/*,audio/*,application/pdf,text/*" 
+    multiple="false"
+    class="hidden"
+    onchange="handleMedia(this, '本地文件')"
+  >
   
   <!-- 预览区域 -->
-  <div class="preview" id="previewArea"></div>
+  <div class="preview" id="previewArea">
+    <p class="preview-title">预览区域</p>
+    <div class="preview-content" id="previewContent">
+      请点击上方按钮拍摄或上传文件
+    </div>
+  </div>
 
   <script>
-    // 处理拍照结果
-    function handleCapture(input) {
+    // 处理媒体文件（相机/上传）
+    function handleMedia(input, type) {
       const file = input.files[0];
       if (!file) return;
 
-      // 清空预览
-      const previewArea = document.getElementById('previewArea');
-      previewArea.innerHTML = '';
+      // 获取预览元素
+      const previewContent = document.getElementById('previewContent');
+      previewContent.innerHTML = '';
+
+      // 创建文件信息提示
+      const fileInfo = document.createElement('div');
+      fileInfo.className = 'file-info';
+      fileInfo.innerHTML = `
+        <strong>${type}：</strong> ${file.name} 
+        <span>(${formatFileSize(file.size)})</span>
+      `;
+      previewContent.appendChild(fileInfo);
 
       // 生成预览URL
       const previewUrl = URL.createObjectURL(file);
-      // 判断文件类型，创建对应预览元素
+      
+      // 根据文件类型创建预览元素
       if (file.type.startsWith('image/')) {
         const img = document.createElement('img');
         img.src = previewUrl;
-        previewArea.appendChild(img);
+        img.alt = file.name;
+        previewContent.appendChild(img);
       } else if (file.type.startsWith('video/')) {
         const video = document.createElement('video');
         video.src = previewUrl;
         video.controls = true;
-        previewArea.appendChild(video);
+        video.title = file.name;
+        previewContent.appendChild(video);
+      } else if (file.type.startsWith('audio/')) {
+        const audio = document.createElement('audio');
+        audio.src = previewUrl;
+        audio.controls = true;
+        audio.title = file.name;
+        previewContent.appendChild(audio);
+      } else {
+        // 其他文件类型（PDF/文本等）
+        const fileLink = document.createElement('a');
+        fileLink.href = previewUrl;
+        fileLink.target = '_blank';
+        fileLink.textContent = `点击查看：${file.name}`;
+        fileLink.style.color = '#0078ff';
+        fileLink.style.textDecoration = 'none';
+        previewContent.appendChild(fileLink);
       }
 
-      // 释放资源（可选）
+      // 清理资源
       input.value = ''; // 重置input，允许重新选择同一文件
       window.addEventListener('beforeunload', () => {
         URL.revokeObjectURL(previewUrl);
       });
+    }
+
+    // 格式化文件大小
+    function formatFileSize(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
   </script>
 </body>
